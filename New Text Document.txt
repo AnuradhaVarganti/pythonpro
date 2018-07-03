@@ -1,0 +1,265 @@
+<html ng-app="fcbApp">
+<head>
+<script type="text/javascript" src="public/js/angular.js"></script>
+<script type="text/javascript">
+var fcbApp=angular.module("fcbApp",[]);
+  fcbApp.controller("fcbController",function($scope,$window,$http){
+	  $scope.isDataLoading=false;
+	  $scope.depositWindowFlag=false;
+	  
+	  $scope.showDepositWindow=function(){
+		  $scope.depositWindowFlag=true;
+
+		  $scope.message="";
+		  $scope.accountStatusFlag=false;
+		  $scope.accountStatusMsgFlag=false;
+		  $scope.depoistAmtFlag=false;
+		  $scope.accountNumber="";
+		  $scope.checkAccountStatusButton=true;
+		  
+	   }
+	  $scope.number=null;
+	   $scope.issuedBy=null;
+	   $scope.issuedDate=null;
+	  
+	   $scope.transactionModeFun=function(){
+		   $scope.chequeShowFlag=false;
+		   $scope.ddShowFlag=false;
+		   $scope.number=null;
+		   $scope.issuedBy=null;
+		   $scope.issuedDate=null;
+		  
+		console.log($scope.transactionMode); 
+		if($scope.transactionMode==='cheque'){
+			$scope.chequeShowFlag=true;
+		}else if($scope.transactionMode==='dd'){
+			$scope.ddShowFlag=true;
+		}
+
+
+		  $scope.message="";
+		  $scope.accountStatusFlag=false;
+		  $scope.accountStatusMsgFlag=false;
+		  $scope.depoistAmtFlag=false;
+		  $scope.accountNumber="";
+		  $scope.checkAccountStatusButton=true;
+		  
+	   }
+	  
+	   $scope.transactionModeFun=function(){
+		   $scope.chequeShowFlag=false;
+		   $scope.ddShowFlag=false;
+		console.log($scope.transactionMode); 
+		if($scope.transactionMode==='cheque'){
+			$scope.chequeShowFlag=true;
+		}else if($scope.transactionMode==='dd'){
+			$scope.ddShowFlag=true;
+		}
+	   }
+   
+	   $scope.deposit=function(){
+		console.log($scope.accountNumber+" "+$scope.amount+" "+$scope.transactionMode);
+	   if($scope.chequeNumber!=null && !$scope.chequeNumber){
+		   $scope.number=$scope.chequeNumber;
+	   }
+	   if($scope.ddNumber!=null && !$scope.ddNumber){
+		   $scope.number=$scope.ddNumber;
+	   }
+
+	   }
+
+	  
+	 $scope.deposit=function(){
+	console.log($scope.accountNumber+" "+$scope.amount+
+	" "+$scope.transactionMode+" "+$scope.number+
+	" "+$scope.issuedBy+" "+$scope.issuedDate);
+	
+   $http({
+	method:"post",	
+	url:"deposit.do",
+	data:{
+		"accountNumber":$scope.accountNumber,
+		"amount":$scope.amount,
+		"transactionMode":$scope.transactionMode,
+		"number":$scope.number,
+		"issuedBy":$scope.issuedBy,
+		"issuedDate":$scope.issuedDate
+	}
+	}).then(function(result){
+		console.log(result.data);
+	},function(result){
+		console.log(result.data);
+	});	
+	 }
+	  
+	
+	 
+	 
+	 
+	 
+	 
+	 
+// 	 $scope.checkAccountStatus=function(){
+// 		  $scope.isDataLoading=false;
+// 		  $scope.message="";
+// 		  $scope.accountStatusFlag=false;
+// 		  $scope.accountStatusMsgFlag=false;
+// 		  $scope.depositAmtFlag=false;
+// 		  $scope.checkAccountStatusButton=true;
+
+
+	  
+	  $scope.checkAccountStatus=function(){
+		  $scope.isDataLoading=false;
+		  $scope.message="";
+		  $scope.accountStatusFlag=false;
+		  $scope.accountStatusMsgFlag=false;
+		  $scope.depositAmtFlag=false;
+		  $scope.checkAccountStatusButton=true;
+
+		  $scope.isDataLoading=true;
+	      $http({
+			url:"checkAccountStatus.do",
+			method:"get",
+			params:{
+				"accountNumber":$scope.accountNumber
+			}
+		  }).then(function(result){
+			  $scope.accountStatusFlag=true;
+			  $scope.response=result.data;
+
+		if($scope.response.status==="SUCCESS"){
+			console.log($scope.response.data);
+	  		var accountStatusObj=angular.fromJson($scope.response.data);
+	  		$scope.message="Account Holder Name : "+accountStatusObj.accountHolderName+"  Branch Name :  "+accountStatusObj.branchName;
+	   		if(accountStatusObj.accountStatus=='0'){
+		   		//in active
+		 		$scope.accountStatusMsg="Account is Inactive";
+		 		$scope.accountStatusMsgFlag=true;
+	   		}else if(accountStatusObj.accountStatus=='1'){
+		   		$scope.depositAmtFlag=true;
+		   		$scope.checkAccountStatusButton=false;
+	   		}
+      		else if(accountStatusObj.accountStatus=='2'){
+    	  		$scope.accountStatusMsg="Account is Blocked";
+
+    	  		$scope.accountStatusMsgFlag=true;
+      		}
+		}else{
+			$scope.message=$scope.response.message;
+		}
+		  },function(result){
+
+			  $scope.accountStatusFlag=true;
+			  $scope.response=result.data;
+			  $scope.message=$scope.response.message;
+		  }).finally(function (){
+			  $scope.isDataLoading=false;
+		  });
+	  }
+	  
+  });
+
+</script>
+</head>
+<body ng-controller="fcbController">
+	<h2 align="center">Home Page</h2>
+	<br />
+	<hr />
+	<button ng-click="showDepositWindow()">Deposit</button>
+
+
+	<div id="depositWindow" ng-show="depositWindowFlag" align="center">
+		<table border="1">
+			<tr>
+				<td colspan="3" align="center">Deposit</td>
+			</tr>
+			<tr ng-show="accountStatusFlag">
+				<td colspan="3" align="center">{{message}}</td>
+			</tr>
+			<tr ng-show="accountStatusMsgFlag">
+				<td colspan="3" align="center">{{accountStatusMsg}}</td>
+			</tr>
+			<tr>
+				<td>Enter Account Number :</td>
+				<td><input type="text" ng-model="accountNumber" /></td>
+				<td ng-show="checkAccountStatusButton">
+					<button ng-click="checkAccountStatus()">Submit</button>
+				</td>
+				
+			</tr>
+			<tr ng-show="depositAmtFlag">
+			<td>Enter Deposit Amount : </td>
+			<td><input type="text" ng-model="amount"/></td>
+			</tr>
+			<tr ng-show="depositAmtFlag">
+			<td>Select Transaction Mode : </td>
+			<td>
+			<input type="radio" ng-model="transactionMode" value="cash" ng-click="transactionModeFun()">CASH</input><br/>
+			<input type="radio" ng-model="transactionMode" value="cheque" ng-click="transactionModeFun()">CHEQUE</input><br/>
+			<input type="radio" ng-model="transactionMode" value="dd" ng-click="transactionModeFun()">DD</input><br/>
+			
+			</td>
+			</tr>
+			<tr ng-show="chequeShowFlag">
+			<td colspan="3">
+			<pre>
+	Enter Cheque Number :<input type="text" ng-model="number"/>
+	Enter Issued Date   :<input type="text" ng-model="issuedDate"/>
+	Enter Issued By     :<input type="text" ng-model="issuedBy"/>
+			</pre>
+			</td>
+			</tr>
+			<tr ng-show="ddShowFlag">
+			<td colspan="3">
+			<pre>
+	Enter DD Number    :<input type="text" ng-model="number"/>
+	Enter Issued Date  :<input type="text" ng-model="issuedDate"/>
+	Enter Issued By    :<input type="text" ng-model="issuedBy"/>
+			</pre>
+			</td>
+			</tr>
+	<tr ng-show="depositAmtFlag">
+	<td colspan="3" align="center">
+	<button ng-click="deposit()">Deposit</button>
+	</td>
+	</tr>		
+		</table>
+		<br>
+		<div ng-show="isDataLoading">
+			<img ng-src="public/images/loading.gif"
+				style="width: 25px; height: 25px" /><br>Please wait...
+		</div>
+	</div>
+
+
+<!-- 	<div id="depositWindow" ng-show="depositWindowFlag" align="center"> -->
+<!-- 		<table border="1"> -->
+<!-- 			<tr> -->
+<!-- 				<td colspan="3" align="center">Deposit</td> -->
+<!-- 			</tr> -->
+<!-- 			<tr ng-show="accountStatusFlag"> -->
+<!-- 				<td colspan="3" align="center">{{message}}</td> -->
+<!-- 			</tr> -->
+<!-- 			<tr ng-show="accountStatusFlag"> -->
+<!-- 				<td colspan="3" align="center">{{accountStatusMsg}}</td> -->
+<!-- 			</tr> -->
+<!-- 			<tr> -->
+<!-- 				<td>Enter Account Number :</td> -->
+<!-- 				<td><input type="text" ng-model="accountNumber" /></td> -->
+<!-- 				<td> -->
+<!-- 					<button ng-click="checkAccountStatus()">Submit</button> -->
+<!-- 				</td> -->
+<!-- 				<td ng-show=""> -->
+<!-- 				</td> -->
+<!-- 			</tr> -->
+<!-- 		</table> -->
+<!-- 		<br> -->
+<!-- 		<div ng-show="isDataLoading"> -->
+<!-- 			<img ng-src="public/images/loading.gif" -->
+<!-- 				style="width: 25px; height: 25px" /><br>Please wait... -->
+<!-- 		</div> -->
+	</div>
+
+</body>
+</html>
